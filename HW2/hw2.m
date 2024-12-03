@@ -1,7 +1,8 @@
 
+close all; 
 %% First we generate input data
-birthdate =  19990301;  % Write the birth date on format yyyymmdd for oldest member in the group
-format compact
+birthdate =  20010925;  % Write the birth date on format yyyymmdd for oldest member in the group
+format compact;
 [lambdavec,Tvec,cvec] = getSPOdata(birthdate);   %yyyymmdd  Do not use clear command or change the values of these variables
 
 % -------------------------------------------------------------------------------------------------------------------
@@ -28,17 +29,19 @@ Q2 = [EBO2 Cost2]; % Checking both at the same time in grader.
 % implemented in your own words in the report, and compute all efficient
 % points.
 %Step 0
-it = 100;
+it = 5;
 k = 1;
 nmrParts = size(lambdavec,2);
 s = zeros(it,nmrParts);
 C = zeros(it,1);
 table = zeros(it, nmrParts);
+tabletest = zeros(it, nmrParts);
 for i=1:length(lambdavec)
-    table(:,i) = Rcomp(lambdavec(i),Tvec(i),it)/cvec(i);
+    table(:,i) = Rcomp(lambdavec(i),Tvec(i),it, cvec(i))/cvec(i);
 end
+tabletest = table;
 %generate EBO 0
-EBO0 = lambdavec.*Tvec;
+EBO0 = sum(lambdavec.*Tvec);
 
 %Step 1 & 2
 budget = 500;
@@ -47,12 +50,27 @@ spent = 0;
 while budget > spent
     k = k+1;
     [r,c] = indexMax(table);
-    table(r,c) = 0;
+    
     s(k,:) = s(k-1,:);
     s(k,c) = s(k-1,c) + 1;
     spent = spent + cvec(c);
     EBO0 = EBO0 - table(r,c) * cvec(c);
+    efficent_cost(k - 1) = spent;
+    efficent_EBO(k - 1) = EBO0;
+    if(EBO0 < 0)
+        efficent_EBO(k - 1) = 0;
+    end
+    table(r,c) = 0;
 end
+%PLOT THE EFFICENT POINTS
+
+figure
+plot(efficent_cost,efficent_EBO,'.-k','LineWidth',2,'MarkerSize',20)
+legend('Efficient Points')
+xlabel("Total Cost ",'FontSize',10,'interpreter','latex')
+ylabel("EBO",'FontSize',10,'interpreter','latex')
+
+
 
 
 
@@ -121,19 +139,6 @@ end
 function [cost] = costcomp(c, s)
     cost = c*s;
 end
-
-function [R] = Rcomp(lambda,T,k) %
-    lamT = lambda*T;
-    R = zeros(k,1);
-    R(1) = 1 - exp(-lamT);
-    p = exp(-lamT);
-    for s=1:k-1
-        s1=s+1;
-        p = p*lamT/s1;
-        R(s1) = R(s) - p;
-    end
-end
-
 
 function [r, c] = indexMax(table)
     [M,I] = max(table,[],"all","linear");
