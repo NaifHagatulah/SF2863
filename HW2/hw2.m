@@ -143,6 +143,106 @@ EPtable = EPcalc(1:5,:);
 
 % Question 7 should be answered in the report, and submitted below
 % as a row vector with numbers of LRU1 used for budget 0 to 50.
+
+
+%create loop that iterates over the budget untill we cannot pick a new part
+s0 = zeros(1, nmrParts);
+%create a new function that gives EBO for a given S vector
+EBO0 = EBO_calc(s0,lambdavec, Tvec);
+budget = 500;
+spent = 0;
+first_optimal = EBO_calc(s0,lambdavec, Tvec) 
+while true
+    EBO_optimal_old = 1000000;
+    for i = 1:nmrParts
+        X = zeros(1, nmrParts);
+        X(i) = 1;
+        EBO_optimal_new = EBO_calc(s0 + X, lambdavec, Tvec);
+        disp("s "+ num2str(s0+X) + " it " + i + " EBO " + EBO_optimal_new)
+        if EBO_optimal_new < EBO_optimal_old && (s0 * cvec' + X * cvec') <= budget
+            EBO_optimal_old = EBO_optimal_new;
+            X_optimal = X;
+            spent = s0 * cvec' + X * cvec';
+        end
+    end
+    if EBO_optimal_old == 1000000
+        break;
+    end
+   s0 = s0 + X_optimal; 
+end
+
+
+
+% Initialize the spare parts vector
+s0 = zeros(1, nmrParts);
+
+% Calculate the initial EBO for the starting state
+EBO0 = EBO_calc(s0, lambdavec, Tvec);
+
+% Define the total budget
+budget = 500;
+spent = 0;
+
+% Display the initial EBO value
+disp(['Initial EBO: ', num2str(EBO0)]);
+
+while true
+    % Initialize variables for tracking the best improvement
+    best_EBO = inf;  % Use `inf` for clarity and to handle floating-point values
+    X_optimal = zeros(1, nmrParts);  % Placeholder for the best part addition
+
+    % Loop over all possible parts to add
+    for i = 1:nmrParts 
+        X = zeros(1, nmrParts);
+        X(i) = 1;
+
+         % Check if adding this part respects the budget
+        if (s0 * cvec' + X * cvec') <= budget
+            % Calculate the EBO for the new state
+            EBO_new = EBO_calc(s0 + X, lambdavec, Tvec);
+
+            % Check if this addition yields the best EBO so far
+            if EBO_new < best_EBO
+                best_EBO = EBO_new;
+                X_optimal = X;  % Update the best choice
+            end
+        end
+    end
+
+    % Check if no improvement is possible
+    if best_EBO == inf
+        break;  % Exit the loop if no part addition improves the solution
+    end
+
+    % Update the state and spent budget
+    s0 = s0 + X_optimal;
+    spent = s0 * cvec';  % Update the total spent budget
+
+    % Display the current state and EBO
+    disp(['Updated s0: ', mat2str(s0)]);
+    disp(['Current EBO: ', num2str(best_EBO)]);
+    disp(['Budget Spent: ', num2str(spent)]);
+end
+
+% Final output
+disp('Final optimal spare parts allocation:');
+disp(s0);
+disp(['Final EBO: ', num2str(EBO_calc(s0, lambdavec, Tvec))]);
+disp(['Total Budget Spent: ', num2str(spent)]);
+
+
+%{
+budget
+spent
+objfunc
+sn
+while spent <= budget
+    xn = min xn*cvec + EBO(sn) 
+    spent = xn*cvec
+    sn1 = sn + xn
+end
+%}
+
 LRU1 = "to do"
 
 % Question 8 should be answered in the report, and submitted below
@@ -178,4 +278,12 @@ end
 function [r, c] = indexMax(table)
     [M,I] = max(table,[],"all","linear");
     [r,c] = ind2sub(size(table), I);
+end
+
+function [EBO] = EBO_calc(S, lambdavec, Tvec)
+    EBO = 0;
+    for i = 1:size(S,2)
+        [~,~, EBO_part] = EBOcomp(lambdavec(i),Tvec(i), S(i));
+        EBO = EBO + EBO_part(end);
+    end
 end
