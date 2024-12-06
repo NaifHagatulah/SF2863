@@ -145,22 +145,34 @@ EPtable = EPcalc(1:5,:);
 % as a row vector with numbers of LRU1 used for budget 0 to 50.
 
 
+LRU1vec = zeros(1,51);
 
-[a,o, V, P] = dp_spare_parts(30, cvec, lambdavec, Tvec);
+for i = 1:51
+    [x_optimal1, ~ ] =  dp_spare_parts2(i - 1, cvec(1), lambdavec(1), Tvec(1));
+    LRU1vec(i) = x_optimal1;
+end
 
-
-LRU1 = "to do"
+LRU1 = LRU1vec;
 
 % Question 8 should be answered in the report, and submitted below
 % Enter on the format DynPtable = [ x0 EBO(x0) C(x0); x1 EB0(x1) C(x1); ... x4 EBO(x4) C(x4)]
 % Where x0 to x4 are the row vectors with number of spare parts of each kind
 % corresponding to the points optimal for budgets 0,100,150, 350, 500.
-DynPtable = "to do"
+budgets =  [0,100,150, 350, 500];
+dynP = zeros(5,11);
+for i = 1:5
+    budget = budgets(i);
+    [x_optimal, EBO_optimal] = dp_spare_parts2(budget, cvec, lambdavec, Tvec);
+    dynP(i, :) = [x_optimal, EBO_optimal, x_optimal*cvec'];
+end
+
+
+DynPtable = dynP;
 
 % Question 9 should be answered in the report
 
 % Question 10 should be answered in the report, and submitted below
-NumberOfConfigurations = "to do"
+NumberOfConfigurations = 6^9;
 
 
 
